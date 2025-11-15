@@ -1,81 +1,62 @@
 # fyers_auth_server.py
-import os
-import json
-import webbrowser
-from flask import Flask, request
 from fyers_apiv3 import fyersModel
+import webbrowser
+import time
 import gspread
+from flask import Flask, request
 
-# CONFIG
-GSHEET_SERVICE_KEY = "gsheet_service_key.json"
+# ========== CONFIG ==========
+CLIENT_ID = "DUDIBC46PY-100"        # Example: ABCD12345-100
+SECRET_KEY = "AKFYIB3Q54"
+REDIRECT_URI = "http://127.0.0.1:5000/callback"
+GSHEET_JSON = "gsheet_service_key.json"
 GSHEET_NAME = "Apps Associates"
-CONFIG_SHEET = "config"
+WORKSHEET_NAME = "config"
+# =============================
 
 app = Flask(__name__)
 
-def get_config():
-    gc = gspread.service_account(filename=GSHEET_SERVICE_KEY)
-    sh = gc.open(GSHEET_NAME)
-    ws = sh.worksheet(CONFIG_SHEET)
-    client_id = ws.acell("F2").value.strip()
-    secret_key = ws.acell("F3").value.strip()
-    redirect_uri = ws.acell("F4").value.strip()
-    return client_id, secret_key, redirect_uri, ws
+gc = gspread.service_account(filename=GSHEET_JSON)
+ws = gc.open(GSHEET_NAME).worksheet(WORKSHEET_NAME)
 
 @app.route("/")
-def index():
-    client_id, secret_key, redirect_uri, ws = get_config()
-    session = fyersModel.SessionModel(
-        client_id=client_id,
-        secret_key=secret_key,
-        redirect_uri=redirect_uri,
+def login():
+    fyers = fyersModel.SessionModel(
+        client_id=CLIENT_ID,
+        secret_key=SECRET_KEY,
+        redirect_uri=REDIRECT_URI,
         response_type="code",
-        grant_type="authorization_code"
+        state="sample"
     )
-    login_url = session.generate_authcode()
-    return f"""
-    <h3>FYERS Authorization</h3>
-    <p><a href="{login_url}" target="_blank">Click here to Login to FYERS</a></p>
-    """
+    auth_link = fyers.generate_authcode()
+    webbrowser.open(auth_link)
+    return "Opened browser for Fyers login..."
 
 @app.route("/callback")
 def callback():
     auth_code = request.args.get("auth_code")
-    if not auth_code:
-        return "<p>Auth code missing in callback URL.</p>"
-    
-    client_id, secret_key, redirect_uri, ws = get_config()
+    print(f"Received auth_code: {auth_code}")
+
     session = fyersModel.SessionModel(
-        client_id=client_id,
-        secret_key=secret_key,
-        redirect_uri=redirect_uri,
+        client_id=CLIENT_ID,
+        secret_key=SECRET_KEY,
+        redirect_uri=REDIRECT_URI,
         response_type="code",
         grant_type="authorization_code"
     )
     session.set_token(auth_code)
-    response = session.generate_token()
-    print("Response:", response)
-    
-    if response.get("s") == "ok":
-        access_token = response["access_token"]
-        refresh_token = response["refresh_token"]
-        ws.update("F5", [[refresh_token]])
-        ws.update("F6", [[access_token]])
-        return "<p>✅ Tokens saved to Google Sheet! You can close this window.</p>"
+    token_response = session.generate_token()
+
+    print("Response:", token_response)
+
+    if "refresh_token" in token_response:
+        ws.update("F5", [[token_response["refresh_token"]]])
+        ws.update("F6", [[token_response["access_token"]]])
+        print("✅ Tokens saved successfully to Google Sheet!")
+        return "✅ Login successful! You can close this tab now."
     else:
-        return f"<p>❌ Error: {response}</p>"
+        print("❌ Token generation failed:", token_response)
+        return "❌ Token generation failed. Check terminal."
 
 if __name__ == "__main__":
-    client_id, secret_key, redirect_uri, ws = get_config()
-    session = fyersModel.SessionModel(
-        client_id=client_id,
-        secret_key=secret_key,
-        redirect_uri=redirect_uri,
-        response_type="code",
-        grant_type="authorization_code"
-    )
-    login_url = session.generate_authcode()
-    print("Open this URL to login and authorize:")
-    print(login_url)
-    webbrowser.open(login_url)
     app.run(port=5000)

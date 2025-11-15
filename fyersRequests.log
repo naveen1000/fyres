@@ -47,3 +47,4 @@
 {"level":"DEBUG","location":"[get_call:140] fyersModel","message":{"Status Code":401,"API":"/positions"},"timestamp":"2025-11-13 12:41:41,707+0530","service":"FyersAPIRequest"}
 {"level":"DEBUG","location":"[get_call:140] fyersModel","message":{"Status Code":200,"API":"/positions"},"timestamp":"2025-11-13 12:44:32,681+0530","service":"FyersAPIRequest"}
 {"level":"DEBUG","location":"[get_call:140] fyersModel","message":{"Status Code":200,"API":"/positions"},"timestamp":"2025-11-13 12:46:10,823+0530","service":"FyersAPIRequest"}
+{"level":"DEBUG","location":"[get_call:140] fyersModel","message":{"Status Code":200,"API":"/positions"},"timestamp":"2025-11-15 11:45:29,553+0530","service":"FyersAPIRequest"}
