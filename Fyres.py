@@ -6,11 +6,11 @@ from telegram import Bot
 
 # ===== CONFIG =====
 CLIENT_ID = "DUDIBC46PY-100"
-GSHEET_FILE_PATH = "gsheet_service_key.json"
+GSHEET_FILE_PATH = "/home/ubuntu/Desktop/zerodha/gsheet_service_key.json"
 GSHEET_FILE = "Apps Associates"
 CONFIG_SHEET = "config"
 JOURNAL_SHEET = "PnL_Journal"
-TELEGRAM_BOT_TOKEN = "1228033872:AAHsI3oFOQLKVC7mmnVH0bNyQuPGitiBEXQ"  # Replace
+TELEGRAM_BOT_TOKEN = "8332447645:AAFMiAN6nYCzAWf0U6mDhlbC1Tl2_oPLi2A"  # Replace
 TELEGRAM_CHAT_ID = "582942300"              # Replace
 
 
@@ -90,12 +90,14 @@ def compute_period_pnl(ws, week_start, month_start):
         try:
             row_date = dt.datetime.strptime(row["Date"], "%Y-%m-%d").date()
             total = float(row.get("Total", 0))
+            realized = float(row.get("Realized", 0))
+
             if row_date == today:
                 today_total += total
             if row_date >= week_start:
-                week_total += total
+                week_total += realized
             if row_date >= month_start:
-                month_total += total
+                month_total += realized
         except Exception:
             continue
 
@@ -128,11 +130,11 @@ def main():
 📊 <b>FYERS P&L Report</b>
 
 🗓️ <b>Today:</b> ₹{round(today_total, 2)}
+  💰 <b>Realized:</b> ₹{round(realized, 2)}
+  💤 <b>Unrealized:</b> ₹{round(unrealized, 2)}
+
 📅 <b>Week (Mon→Today):</b> ₹{round(week_total, 2)}
 📆 <b>Month (1st→Today):</b> ₹{round(month_total, 2)}
-
-💰 <b>Realized:</b> ₹{round(realized, 2)}
-💤 <b>Unrealized:</b> ₹{round(unrealized, 2)}
 
 🧾 <i>Logged on: {dt.date.today().strftime('%d %b %Y')}</i>
 """
